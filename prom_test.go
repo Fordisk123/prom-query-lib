@@ -19,7 +19,7 @@ func (t *testWorkloadLabel) String() string {
 	return fmt.Sprintf("[%s]下的工作负载类型为[%s]名为[%s]的容器[%s]", t.Namespace, t.WorkloadType, t.WorkloadName, t.ContainerName)
 }
 
-const promAddress = "http://prometheus-test.kubeease.cn"
+const promAddress = "http://127.0.0.1:9090"
 
 func TestPromVector(t *testing.T) {
 

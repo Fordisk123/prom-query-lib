@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/prometheus/common/model"
+	"strings"
 	"testing"
 	"time"
 )
@@ -52,6 +53,35 @@ func TestPromVector(t *testing.T) {
 	for k, v := range resultMap {
 		fmt.Printf("%s当前使用最大内存为：%s\n", k.String(), v)
 	}
+
+	fmt.Println("------------------------------")
+
+	resultList, err := NewVector[testWorkloadLabel, string](value).SetLabelCovertFunc(func(metric model.Metric) testWorkloadLabel {
+		return testWorkloadLabel{
+			Namespace:     string(metric["namespace"]),
+			WorkloadName:  string(metric["workload"]),
+			WorkloadType:  string(metric["workload_type"]),
+			ContainerName: string(metric["container_name"]),
+		}
+	}).SetValueConvertFunc(func(sample model.SampleValue) string {
+		return fmt.Sprintf("%dKi", int64((float64(sample)/1024)+0.5))
+	}).ToList()
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	dataList := resultList.ListData(func(l1, l2 testWorkloadLabel) bool {
+		if strings.Compare(l1.ContainerName, l2.ContainerName) < 0 {
+			return true
+		} else {
+			return false
+		}
+	})
+
+	for i := range dataList {
+		fmt.Printf("%s当前使用最大内存为：%s\n", dataList[i].Label.String(), dataList[i].Value)
+	}
+
 }
 
 func TestPromMatrix(t *testing.T) {
@@ -77,6 +107,29 @@ func TestPromMatrix(t *testing.T) {
 	for k, v := range resultMap {
 		fmt.Printf("节点[%s]7天的CPU使用率：%s\n", k, v)
 	}
+
+	fmt.Println("------------------------------")
+
+	resultList, err := NewMatrix[string, string](value).SetLabelCovertFunc(func(metric model.Metric) string { return string(metric["node"]) }).SetValueConvertFunc(func(sample model.SampleValue) string {
+		return fmt.Sprintf("%.2f%%", float64(sample)*100)
+	}).ToList()
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+
+	dataList := resultList.ListData(func(l1, l2 string) bool {
+		if strings.Compare(l1, l2) > 0 {
+			return true
+		} else {
+			return false
+		}
+	})
+
+	for i := range dataList {
+		fmt.Printf("节点[%s]7天的CPU使用率：%s\n", dataList[i].Label, dataList[i].Value)
+	}
+
 }
 
 func TestPromScalar(t *testing.T) {

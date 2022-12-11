@@ -112,7 +112,7 @@ func TestPromMatrix(t *testing.T) {
 
 	resultList, err := NewMatrix[string, string](value).SetLabelCovertFunc(func(metric model.Metric) string { return string(metric["node"]) }).SetValueConvertFunc(func(sample model.SampleValue) string {
 		return fmt.Sprintf("%.2f%%", float64(sample)*100)
-	}).ToList()
+	}).ToPointList()
 	if err != nil {
 		t.Errorf(err.Error())
 		return
